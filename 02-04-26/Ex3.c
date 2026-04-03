@@ -1,7 +1,3 @@
-/******************
- * Incipiunt Data
- ******************/
-
 #define N 20
 #define NAME_LEN 32
 #define M 4
@@ -30,6 +26,7 @@ char students[N][NAME_LEN] = {
 };
 
 int grades[N][M] = {
+  // Math, Physics, Chemistry, English
   {78, 85, 92, 88}, // Aram Petrosyan
   {65, 70, 58, 62}, // Nareh Mkrtchyan
   {90, 95, 88, 93}, // Vahan Grigoryan
@@ -52,10 +49,13 @@ int grades[N][M] = {
   {91, 95, 93, 94}  // Astghik Danielyan
 };
 
-int cmp_str(char *str1, char *str2) {
-  int i;
-  for(i = 0; str1[i] && str2[i] && str1[i] == str2[i]; i++);
-  return str1[i] - str2[i];
+int cmp_avg_grd(int i, int j) {
+  return grades[i][0] + grades[i][1] + grades[i][2] + grades[i][3]
+    - grades[j][0] - grades[j][1] - grades[j][2] - grades[j][3];
+}
+
+int cmp_math_grade(int i, int j) {
+  return grades[i][0] - grades[j][0];
 }
 
 int cpy_mem(unsigned size, void *dest, void *src) {
@@ -65,7 +65,8 @@ int cpy_mem(unsigned size, void *dest, void *src) {
   return;
 }
 
-void sort(unsigned n, char std[][NAME_LEN], int grd[][M]) {
+void sort(unsigned n, char std[][NAME_LEN], int grd[][M],
+  int cmp(int, int)) {
   // Sorts using the Quicksort Algorithm
   char tmpstr[NAME_LEN];
   int tmpgrd[M];
@@ -74,7 +75,7 @@ void sort(unsigned n, char std[][NAME_LEN], int grd[][M]) {
   k = n - 1; // Last Element is Pivot
   j = -1; // Partitioning
   for(i = 0; i < n; i++)
-    if(cmp_str(std[i], std[k]) <= 0) {
+    if(cmp(i, k) <= 0) {
       cpy_mem(NAME_LEN, tmpstr, std[++j]); // Swap the two Entries
       cpy_mem(NAME_LEN, std[j], std[i]);
       cpy_mem(NAME_LEN, std[i], tmpstr);
@@ -82,8 +83,22 @@ void sort(unsigned n, char std[][NAME_LEN], int grd[][M]) {
       cpy_mem(M * sizeof(int), grd[j], grd[i]);
       cpy_mem(M * sizeof(int), grd[i], tmpgrd);
     }
-  sort(j, std, grd); // Sort the two Partitions
-  sort(n - j - 1, std + j + 1, grd + j + 1);
+  sort(j, std, grd, cmp); // Sort the two Partitions
+  sort(n - j - 1, std + j + 1, grd + j + 1, cmp);
+}
+
+int avg_gt_80(int i) {
+  return grades[i][0] + grades[i][1] + grades[i][2] + grades[i][3] > 320;
+}
+
+int avg_lt_60(int i) {
+  return grades[i][0] + grades[i][1] + grades[i][2] + grades[i][3] < 240;
+}
+
+int count(unsigned n, char std[][NAME_LEN], int grd[][M], int crit(int)) {
+  int count = 0, i;
+  for(i = 0; i < n; i++) if(crit(i)) count++;
+  return count;
 }
 
 /***********************
@@ -95,12 +110,31 @@ void sort(unsigned n, char std[][NAME_LEN], int grd[][M]) {
 
 int main(int argc, char const *argv[]) {
   int i;
-  printf("\nPlain:\t%-50sGrades:\n\n", "Name:");
-  for(i = 0; i < N; i++) printf("\t%-50s%d %d %d %d\n", students[i],
-    grades[i][0], grades[i][1], grades[i][2], grades[i][3]);
-  sort(N, students, grades);
-  printf("\nSorted:\t%-50sGrades:\n\n", "Name:");
-  for(i = 0; i < N; i++) printf("\t%-50s%d %d %d %d\n", students[i],
-    grades[i][0], grades[i][1], grades[i][2], grades[i][3]);
+  printf("1: Highest and lowest average Grade.\n");
+  printf("2: 5 highest Grades from Math.\n");
+  printf("3: Average higher than 80.\n");
+  printf("4: Average lower than 60.\n");
+  printf("5: Subject with highest average Grade.\n");
+  printf("Which one?");
+  scanf("%d", &i);
+  switch(i) {
+  case 1:
+    sort(N, students, grades, cmp_avg_grd);
+    printf("Highest Average: %s\n", students[N - 1]);
+    printf("Lowest Average: %s\n", students[0]);
+    break;
+  case 2:
+    sort(N, students, grades, cmp_math_grade);
+    printf("Student with highest Math Grade: %s\n", students[N - 1]);
+    break;
+  case 3:
+    printf("Students with average Grade greater than 80: %d",
+      count(N, students, grades, avg_gt_80));
+    break;
+  case 4:
+    printf("Students with average Grade less than 60: %d",
+      count(N, students, grades, avg_lt_60));
+    break;
+  }
   return 0;
 }
