@@ -4,7 +4,7 @@ int num_of_sub(unsigned n, int *arr, int k) {
   int *tmp;
   unsigned i, count;
   if(!n) return 0;
-  if(n == 1 && arr[0] == k) return 1;
+  if(n == 1) return arr[0] == k;
   for(i = count = 0; i < n; i++) if(arr[i] == k) count++;
   tmp = malloc((n - 1) * sizeof(*tmp));
   for(i = 0; i < n - 1; i++) tmp[i] = arr[i] + arr[i + 1];
