@@ -9,7 +9,7 @@ char *sum(char *a, char *b) {
   j = strlen(b);
   n = greater(i, j);
   res = malloc(n + 2);
-  if(!n) {
+  if(!res) {
     return NULL;
   }
   res[n + 1] = '\0';
@@ -24,7 +24,9 @@ char *sum(char *a, char *b) {
     carry = s / 10;
     res[n--] = s % 10 + '0';
   }
-  if(res[0] == '0') strcpy(res, res + 1);
+  if(res[0] == '0') {
+    strcpy(res, res + 1);
+  }
   return res;
 }
 
@@ -35,7 +37,7 @@ char *dif(char *a, char *b) {
   j = strlen(b);
   n = greater(i, j);
   res = malloc(n + 2);
-  if(!n) {
+  if(!res) {
     return NULL;
   }
   res[n + 1] = '\0';
@@ -66,6 +68,34 @@ char *dif(char *a, char *b) {
   return res;
 }
 
+char *prod(char *a, char *b) {
+  char digit1, digit2, *res;
+  int s, carry = 0;
+  int i, j, k, m, n;
+  i = strlen(a);
+  j = strlen(b);
+  n = i + j;
+  res = malloc(n + 1);
+  if(!res) {
+    return NULL;
+  }
+  res[n] = '\0';
+  for(m = 1; m <= n; m++) {
+    s = carry;
+    for(k = 1; k <= m; k++) {
+      digit1 = i - k >= 0 ? a[i - k] - '0' : 0;
+      digit2 = j - m + k - 1 >= 0 ? b[j - m + k - 1] - '0' : 0;
+      s += digit1 * digit2;
+    }
+    carry = s / 10;
+    res[n - m] = s % 10 + '0';
+  }
+  if(res[0] == '0') {
+    strcpy(res, res + 1);
+  }
+  return res;
+}
+
 #include <stdio.h>
 
 int main() {
@@ -74,6 +104,8 @@ int main() {
   res = sum(a, b);
   printf("%s\n", res ? res : "NULL");
   res = dif(a, b);
+  printf("%s\n", res ? res : "NULL");
+  res = prod(a, b);
   printf("%s\n", res ? res : "NULL");
   return 0;
 }
