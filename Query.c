@@ -14,6 +14,7 @@ Table *build(char *left, char *op, char *right, unsigned rightnum) {
   FILE *f;
   char field=0, opnum=0;
   int cmp;
+  double leftnum;
   if(!strcmp(left, "population")) field = 1;
   if(!strcmp(left, "country")) field = 2;
   if(!strcmp(left, "lat")) field = 3;
@@ -57,9 +58,42 @@ Table *build(char *left, char *op, char *right, unsigned rightnum) {
   
   fscanf(f, "%*s");
   while(read_item(&tmp, f)) {
-    
+    if(field == 2)
+      if(opnum == 1) cmp = !strcmp(tmp.country, right);
+      else {
+        del_table(res);
+        return NULL;
+      }
+    switch(field) {
+    case 1:
+      leftnum = tmp.population;
+      break;
+    case 3:
+      leftnum = tmp.lat;
+      break;
+    case 4:
+      leftnum = tmp.lng;
+      break;
+    case 5:
+      leftnum = tmp.population;
+    }
+    switch(opnum) {
+    case 1:
+      cmp = leftnum == rightnum;
+    case 2:
+      cmp = leftnum < rightnum;
+    case 3:
+      cmp = leftnum <= rightnum;
+    case 4:
+      cmp = leftnum > rightnum;
+    case 5:
+      cmp = leftnum >= rightnum;
+    }
+    if(cmp) append_Table(res, &tmp);
   }
   fclose(f);
+  
+  return res;
 }
 
 Table *query(char *qry) {
