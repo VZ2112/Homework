@@ -1,123 +1,113 @@
-#include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
 
 typedef struct {
-  unsigned ID;
-  char name[64];
-  unsigned pop;
-} City;
+  int *data;
+  unsigned capacity;
+  unsigned length;
+} int_List;
 
-City said[1024];
-unsigned len;
-char buf[1024];
-char last[64] = "";
+typedef struct {
+  char **data;
+  unsigned capacity;
+  unsigned length;
+} string_List;
 
-int help(char *str) {
-  City tmp, tmp2;
-  FILE *f;
-  unsigned i, n;
-  int maxpop = -1;
-  if(last[0]) {
-    last[0] = last[strlen(last) - 1];
-    last[0] = last[0] & 0x40 && last[0] & 0x20 ? last[0] - 0x20 : last[0];
-    strcpy(tmp.name, last);
+void push_int(int_List *l, int n) {
+  if(!l->capacity) {
+    l->data = malloc(sizeof(int));
+    l->capacity = 1;
   }
-  n = strlen(str);
-  f = fopen("worldcities.csv", "r");
-  fgets(buf, 1024, f);
-  while(fgets(buf, 1024, f) && buf[0] && buf[0] != '\n') {
-    sscanf(buf, "%u,%[^,]", &tmp2.ID, tmp2.name);
-    for(n = strlen(buf); buf[n - 1] == '\n' || buf[n - 1] >= '0' && buf[n - 1] <= '9'; n--);
-    sscanf(buf + n, "%u", &tmp2.pop);
-    if(!tmp.name[0] || tmp.name[0] == tmp2.name[0] && (long)tmp2.pop > maxpop) {
-      for(i = 0; i < len; i++) if(!strcmp(tmp2.name, said[i].name)) goto sd;
-      maxpop = tmp2.pop;
-      tmp = tmp2;
-    sd:;
-    }
-  }
-  if(maxpop < 0) puts("Ran out of Cities.");
-  else {
-    printf("What about %s.\n", tmp.name);
-    said[len++] = tmp;
-    if(len == 1024) {
-      puts("Cannot remember any more Cities.");
-      goto fail;
-    }
-    strcpy(last, tmp.name);
-  }
-fail:
-  fclose(f);
+  else if(l->length == l->capacity) l->data = realloc(l->data, (l->capacity = 2 * l->capacity) * sizeof(int));
+  l->data[l->length++] = n;
 }
 
-int test(char *str) {
-  City tmp, tmp2;
-  FILE *f;
-  unsigned i, n;
-  int maxpop = -1;
-  if(last[0]) {
-    last[0] = last[strlen(last) - 1];
-    last[0] = last[0] & 0x40 && last[0] & 0x20 ? last[0] - 0x20 : last[0];
-    if(last[0] != str[0]) {
-      puts("Letters mismatch!");
-      return 0;
-    }
+int *pop_int(int_List *l) {
+  if(!l->length) return NULL;
+  return l->data + --l->length;
+}
+
+void push_string(string_List *l, char *s) {
+  if(!l->capacity) {
+    l->data = malloc(sizeof(char *));
+    l->capacity = 1;
   }
-  n = strlen(str);
-  f = fopen("worldcities.csv", "r");
-  fgets(buf, 1024, f);
-  while(fgets(buf, 1024, f) && buf[0] && buf[0] != '\n') {
-    sscanf(buf, "%u,%[^,]", &tmp.ID, tmp.name);
-    if(strcmp(tmp.name, str)) continue;
-    for(i = 0; i < len; i++)
-      if(said[i].ID == tmp.ID) {
-        puts("That City is already named!");
-        goto fail;
-      }
-    said[len++] = tmp;
-    if(len == 1024) {
-      puts("Cannot remember any more Cities.");
-      goto fail;
-    }
-    fseek(f, 0, SEEK_SET);
-    tmp.name[0] = tmp.name[n - 1];
-    tmp.name[0] = tmp.name[0] & 0x40 && tmp.name[0] & 0x20 ? tmp.name[0] - 0x20 : tmp.name[0];
-    fgets(buf, 1024, f);
-    while(fgets(buf, 1024, f) && buf[0] && buf[0] != '\n') {
-      sscanf(buf, "%u,%[^,]", &tmp2.ID, tmp2.name);
-      for(n = strlen(buf); buf[n - 1] == '\n' || buf[n - 1] >= '0' && buf[n - 1] <= '9'; n--);
-      sscanf(buf + n, "%u", &tmp2.pop);
-      if(tmp.name[0] == tmp2.name[0] && (long)tmp2.pop > maxpop) {
-        for(i = 0; i < len; i++) if(!strcmp(tmp2.name, said[i].name)) goto sd;
-        maxpop = tmp2.pop;
-        tmp = tmp2;
-      sd:;
-      }
-    }
-    if(maxpop < 0) puts("Ran out of Cities.");
-    else {
-      printf("I say %s.\n", tmp.name);
-      said[len++] = tmp;
-      if(len == 1024) {
-        puts("Cannot remember any more Cities.");
-        goto fail;
-      }
-      strcpy(last, tmp.name);
-    }
-    goto fail;
+  else if(l->length == l->capacity) l->data = realloc(l->data, (l->capacity = 2 * l->capacity) * sizeof(char *));
+  l->data[l->length] = malloc(strlen(s) + 1);
+  strcpy(l->data[l->length++], s);
+}
+
+char *pop_string(string_List *l) {
+  if(!l->length) return NULL;
+  return l->data[--l->length];
+}
+
+enum {COM_TYPE=1, COM_DELETE};
+
+int_List commands={0}, added={0};
+string_List deleted={0};
+char *edited=NULL;
+
+void type(char *arg, int v) {
+  if(!edited) edited = calloc(1, 1);
+  edited = realloc(edited, strlen(edited) + strlen(arg) + 1);
+  strcat(edited, arg);
+  if(v) {
+    push_int(&commands, COM_TYPE);
+    push_int(&added, strlen(arg));
+    printf("Typed %u Characters.\n", (unsigned)strlen(arg));
   }
-  puts("That City does not exist!");
-fail:
-  fclose(f);
+}
+
+void delete(unsigned n, int v) {
+  unsigned l = strlen(edited);
+  if(n > l) n = l;
+  if(v) {
+    push_int(&commands, COM_DELETE);
+    push_string(&deleted, edited + l - n);
+    printf("Deleted %u Characters.\n", n);
+  }
+  edited[l - n] = '\0';
+}
+
+void undo() {
+  int *p, *n;
+  char *s;
+  p = pop_int(&commands);
+  if(!p) {
+    puts("No Action to undo.");
+    return;
+  }
+  if(*p == COM_TYPE) {
+    p = pop_int(&added);
+    delete(*p, 0);
+  }
+  if(*p == COM_DELETE) {
+    s = pop_string(&deleted);
+    type(s, 0);
+  }
+  puts("Action undone.");
+}
+
+void prt() {
+  puts(edited);
 }
 
 int main() {
-  char str[256];
+  char entered[1024], command[16], arg[1024];
+  unsigned n, i;
   while(1) {
-    printf("Enter a City Name:");
-    gets(str);
-    if(!strcmp(str, "help")) help(str);
-    test(str);
+    printf("$>");
+    gets(entered);
+    if(feof(stdin)) break;
+    sscanf(entered, "%s %s", command, arg);
+    if(!strcmp(command, "type")) type(arg, 1);
+    else if(!strcmp(command, "delete") && sscanf(arg, "%u", &n)) delete(n, 1);
+    else if(!strcmp(command, "print")) prt();
+    else if(!strcmp(command, "undo")) undo();
+    else puts("Bad Command or Argument.");
   }
   return 0;
 }
+    
