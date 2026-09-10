@@ -25,13 +25,25 @@ create_backup() {
 		then write_log $dt "ERROR: Could not create Backup Directory"; return 1
 		fi
 	elif [[ ! -e "$src" ]]
-	then write_log $dt "ERROR: $(realpath $src) does not exist"; return 1
+	then write_log $dt "ERROR: $(realpath "$src") does not exist"; return 1
 	fi
-	tar -cf "$BACKUPDIR/$(basename $src)-$dt" "$src" > /dev/null
+	tar -cf "$BACKUPDIR/$(basename "$src")-$dt" "$src" > /dev/null
 	if [[ ! $? -eq 0 ]]
 	then write_log $dt "ERROR: Failed to create Backup"; return 1
 	fi
-	write_log $dt "Successfully Backed up $(realpath $src)"
+	write_log $dt "Successfully Backed up $(realpath "$src")"
+}
+
+check_backup() {
+	printf "Enter File Name: "
+	read src
+	src="$(basename "$src")"
+	res=$(ls -al "$BACKUPDIR/$src"-????-??-??-??:??:?? | wc -l)
+	echo $res
+	if [[ $res -eq 0 ]]
+	then echo "Backup does not exist."
+	else echo "Backup exists."
+	fi
 }
 
 echo "===== BACKUP Manager ====="
@@ -40,9 +52,9 @@ select i in "Create Backup" "Show Backup History" "Check Backup" "Exit"
 do	case $REPLY in
 	1)	create_backup;;
 	2)	show_log;;
+	3)	check_backup;;
 	4)	echo "Goodbye!"
 		exit;;
-	*)	echo "Invalid Option."
-		continue;;
+	*)	continue;;
 	esac
 done
